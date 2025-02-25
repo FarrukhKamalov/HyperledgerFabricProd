@@ -1,0 +1,186 @@
+Organizations:
+  - &OrdererOrg
+    Name: OrdererOrg                  # Tashkilot nomi
+    ID: OrdererMSP                    # MSP ID - Tashkilotning unikal identifikatori
+    MSPDir: ./crypto-config/ordererOrganizations/example.com/msp   # Orderer uchun MSP katalogi
+    Policies:                         # Orderer uchun policy qoidalari
+      Readers:                        # Bloklarni o‘qish uchun ruxsat
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"   # Har qanday OrdererMSP a’zosi o‘qishi mumkin
+      Writers:                        # Bloklarga yozish uchun ruxsat
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:                         # Administrativ ruxsatlar
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+    OrdererEndpoints:                 # Orderer’ning tarmoq manzili
+      - orderer.example.com:7050
+
+  - &Manufacturer
+    Name: ManufacturerMSP             # Tashkilot nomi
+    ID: ManufacturerMSP               # MSP ID
+    MSPDir: ./crypto-config/peerOrganizations/manufacturer.example.com/msp  # MSP katalogi
+    Policies:
+      Readers:                        # Peer’larni o‘qish huquqi
+        Type: Signature
+        Rule: "OR('ManufacturerMSP.admin', 'ManufacturerMSP.peer', 'ManufacturerMSP.client')"
+      Writers:                        # Yozish huquqi
+        Type: Signature
+        Rule: "OR('ManufacturerMSP.admin', 'ManufacturerMSP.client')"
+      Admins:                         # Admin huquqi
+        Type: Signature
+        Rule: "OR('ManufacturerMSP.admin')"
+      Endorsement:                    # Chaincode endorse qilish qoidasi
+        Type: Signature
+        Rule: "OR('ManufacturerMSP.peer')"
+
+  - &Distributor
+    Name: DistributorMSP
+    ID: DistributorMSP
+    MSPDir: ./crypto-config/peerOrganizations/distributor.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('DistributorMSP.admin', 'DistributorMSP.peer', 'DistributorMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('DistributorMSP.admin', 'DistributorMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('DistributorMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('DistributorMSP.peer')"
+
+  - &Retailer
+    Name: RetailerMSP
+    ID: RetailerMSP
+    MSPDir: ./crypto-config/peerOrganizations/retailer.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('RetailerMSP.admin', 'RetailerMSP.peer', 'RetailerMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('RetailerMSP.admin', 'RetailerMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('RetailerMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('RetailerMSP.peer')"
+
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true                  # Kanal uchun Fabric 2.0 imkoniyatlari yoqilgan
+  Orderer: &OrdererCapabilities
+    V2_0: true                  # Orderer uchun Fabric 2.0 imkoniyatlari
+  Application: &ApplicationCapabilities
+    V2_5: true                  # Chaincode va smart kontraktlar uchun 2.5 imkoniyatlar
+
+
+Application: &ApplicationDefaults
+  Organizations:                # Tashkilotlar bu yerga avtomatik kiritiladi
+  Policies:                     # Umumiy qoidalar
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"       # Har qanday o‘quvchi o‘qishi mumkin
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"       # Har qanday yozuvchi yozishi mumkin
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"   # Ko‘pchilik adminlar ruxsat bersa
+    LifecycleEndorsement:       # Chaincode hayotiy tsikli uchun endorse qilish qoidasi
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+  Capabilities:
+    <<: *ApplicationCapabilities  # Application qobiliyatlarini ulash
+
+
+Orderer: &OrdererDefaults
+  Addresses:
+    - orderer.example.com:7050    # Orderer manzili va porti
+  BatchTimeout: 2s                # Bloklarni yaratishdagi kutish vaqti
+  BatchSize:                      # Blok o‘lchamlari
+    MaxMessageCount: 10           # Maksimal tranzaksiya soni
+    AbsoluteMaxBytes: 99 MB       # Maksimal blok hajmi
+    PreferredMaxBytes: 512 KB     # Afzal qilingan blok hajmi
+  Organizations:                  # Orderer tashkilotlari
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "ANY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities       # Kanal uchun imkoniyatlar
+
+
+Profiles:
+  SupplyChainGenesis:             # Genesis blok yaratish uchun profil
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      OrdererType: etcdraft       # Raft konsensus algoritmi
+      EtcdRaft:
+        Consenters:               # Konsensusga qatnashuvchi ordererlar
+          - Host: orderer.example.com
+            Port: 7050
+            ClientTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+            ServerTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+      Organizations:
+        - *OrdererOrg             # Orderer tashkiloti
+      Capabilities: *OrdererCapabilities
+    Consortiums:
+      SupplyConsortium:
+        Organizations:
+          - *Manufacturer         # Konsorsiumdagi tashkilotlar
+          - *Distributor
+          - *Retailer
+
+  SupplyChainChannel:             # Kanal yaratish uchun profil
+    <<: *ChannelDefaults
+    Consortium: SupplyConsortium
+    Orderer:
+      <<: *OrdererDefaults
+      OrdererType: etcdraft       # Raft konsensus algoritmi
+      EtcdRaft:
+        Consenters:               # Konsensusga qatnashuvchi ordererlar
+          - Host: orderer.example.com
+            Port: 7050
+            ClientTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+            ServerTLSCert: ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+      Organizations:
+        - *OrdererOrg             # Orderer tashkiloti
+      Capabilities: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *Manufacturer           # Peer tashkilotlari
+        - *Distributor
+        - *Retailer
+      Capabilities: *ApplicationCapabilities
