@@ -5,11 +5,11 @@ services:
   # Orderer Service
   orderer.example.com:
     container_name: orderer.example.com
-    image: hyperledger/fabric-orderer:latest
+    image: hyperledger/fabric-orderer:2.5
     environment:
       - ORDERER_GENERAL_LOGLEVEL=info
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/orderer/orderer.genesis.block
+      - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/orderer/genesis.block
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
       - ORDERER_GENERAL_TLS_ENABLED=true
@@ -17,7 +17,7 @@ services:
       - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
       - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
     volumes:
-      - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
     ports:
@@ -28,7 +28,7 @@ services:
   # Manufacturer Peer
   peer0.manufacturer.example.com:
     container_name: peer0.manufacturer.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.manufacturer.example.com
       - CORE_PEER_ADDRESS=peer0.manufacturer.example.com:7051
@@ -50,11 +50,11 @@ services:
   # Distributor Peer
   peer0.distributor.example.com:
     container_name: peer0.distributor.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.distributor.example.com
-      - CORE_PEER_ADDRESS=peer0.distributor.example.com:8051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
+      - CORE_PEER_ADDRESS=peer0.distributor.example.com:9051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
       - CORE_PEER_LOCALMSPID=DistributorMSP
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/peer/msp
       - CORE_PEER_TLS_ENABLED=true
@@ -65,18 +65,18 @@ services:
       - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/var/hyperledger/peer/msp
       - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls:/var/hyperledger/peer/tls
     ports:
-      - 8051:8051
+      - 9051:9051
     networks:
       - fabric-network
 
   # Retailer Peer
   peer0.retailer.example.com:
     container_name: peer0.retailer.example.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.5
     environment:
       - CORE_PEER_ID=peer0.retailer.example.com
-      - CORE_PEER_ADDRESS=peer0.retailer.example.com:9051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
+      - CORE_PEER_ADDRESS=peer0.retailer.example.com:11051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:11051
       - CORE_PEER_LOCALMSPID=RetailerMSP
       - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/peer/msp
       - CORE_PEER_TLS_ENABLED=true
@@ -87,20 +87,17 @@ services:
       - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp:/var/hyperledger/peer/msp
       - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/tls:/var/hyperledger/peer/tls
     ports:
-      - 9051:9051
+      - 11051:11051
     networks:
       - fabric-network
 
   # CLI for executing commands
   cli:
     container_name: cli
-    image: hyperledger/fabric-tools:latest
+    image: hyperledger/fabric-tools:2.5
     tty: true
     stdin_open: true
     environment:
-      - GOPATH=/opt/gopath
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - FABRIC_LOGGING_SPEC=DEBUG
       - CORE_PEER_ID=cli
       - CORE_PEER_ADDRESS=peer0.manufacturer.example.com:7051
       - CORE_PEER_LOCALMSPID=ManufacturerMSP
@@ -115,7 +112,6 @@ services:
       - /var/run/docker.sock:/host/var/run/docker.sock
     networks:
       - fabric-network
-
 
 networks:
   fabric-network:
